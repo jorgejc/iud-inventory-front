@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom';
+import { getInventarioPorId, actualizarInventario } from '../../services/inventarioService';
 import { getEstados } from '../../services/estadoService';
 import { getMarcas } from '../../services/marcaService';
 import { getTipos } from '../../services/tipoService';
 import { getUsuarios } from '../../services/usuarioService';
-import { crearInventario } from '../../services/inventarioService';
 import Swal from 'sweetalert2';
 
+export const InventarioUpdate = () => {
 
-export const InventarioNew = ({ handleOpenModal, listarInventarios }) => {
-
+    const { inventarioId = '' } = useParams();
+    const [ inventario, setInventario ] = useState();
     const [usuarios, setUsuarios ] = useState([]);
     const [marcas, setMarcas ] = useState([]);
     const [tipos, setTipos ] = useState([]);
@@ -16,67 +18,111 @@ export const InventarioNew = ({ handleOpenModal, listarInventarios }) => {
     const [ valoresForm, setValoresForm ] = useState([]);
     const { serial = '', modelo = '', descripcion = '', color = '',
         foto = '', fechaCompra = '', precio = '', usuario, marca, tipo, estado } = valoresForm
+
+
+
+        const listarUsuarios = async () => {
+            try{
+                const { data } = await getUsuarios();
+                setUsuarios(data);
     
-const listarUsuarios = async () => {
-    try{
-        const { data } = await getUsuarios();
-        setUsuarios(data);
-
-    } catch(error) {
-        console.log(error);
-    }
-}
-
-useEffect(() => {
-    listarUsuarios();
-}, []);
-
-
-const listarMarcas = async () => {
-    try{
-        const { data } = await getMarcas();
-        setMarcas(data);
-
-    } catch(error) {
-        console.log(error);
-    }
-}
-
-useEffect(() => {
-    listarMarcas();
-}, []);
-
-
-const listarTipos = async () => {
-    try{
-        const { data } = await getTipos();
-        setTipos(data);
-
-    } catch(error) {
-        console.log(error);
-    }
-}
-
-useEffect(() => {
-    listarTipos();
-}, []);
-
-
-const listarEstados = async () => {
-    try{
-        const { data } = await getEstados();
-        setEstados(data);
-
-    } catch(error) {
-        console.log(error);
-    }
-}
-
-useEffect(() => {
-    listarEstados();
-}, []);
-
+            } catch(error) {
+                console.log(error);
+            }
+        }
     
+        useEffect(() => {
+            listarUsuarios();
+        }, []);
+    
+    
+        const listarMarcas = async () => {
+            try{
+                const { data } = await getMarcas();
+                setMarcas(data);
+    
+            } catch(error) {
+                console.log(error);
+            }
+        }
+    
+        useEffect(() => {
+            listarMarcas();
+        }, []);
+    
+    
+        const listarTipos = async () => {
+            try{
+                const { data } = await getTipos();
+                setTipos(data);
+    
+            } catch(error) {
+                console.log(error);
+            }
+        }
+    
+        useEffect(() => {
+            listarTipos();
+        }, []);
+    
+    
+        const listarEstados = async () => {
+            try{
+                const { data } = await getEstados();
+                setEstados(data);
+    
+            } catch(error) {
+                console.log(error);
+            }
+        }
+    
+        useEffect(() => {
+            listarEstados();
+        }, []);
+        
+
+
+    const getInventario = async () => {
+        try {
+            Swal.fire({
+                allowOutsideClick: false,
+                text: 'Cargando...'
+            });
+            Swal.showLoading();
+            const { data } = await getInventarioPorId(inventarioId);
+            console.log(data);
+            setInventario(data);
+            Swal.close();
+        } catch(error) {
+            console.log(error);
+            Swal.close();
+        }
+    }
+
+    useEffect(() => {
+        getInventario();
+    }, [inventarioId]);
+
+
+    useEffect(() => {
+        if(inventario) {
+            setValoresForm({
+                serial: inventario.serial,
+                modelo: inventario.modelo,
+                descripcion: inventario.descripcion,
+                color: inventario.color,
+                foto: inventario.foto,
+                fechaCompra: inventario.fechaCompra,
+                precio: inventario.precio,
+                usuario: inventario.usuario,
+                marca: inventario.marca,
+                tipo: inventario.tipoEquipo,
+                estado: inventario.estadoEquipo
+            });
+        }
+    }, [ inventario ])
+
+
     const handleOnChange = ({ target }) => {
         const { name, value } = target;
         setValoresForm({ ...valoresForm, [name]: value });
@@ -84,6 +130,7 @@ useEffect(() => {
 
     const handleOnSubmit = async (e) => {
         e.preventDefault();
+
         const inventario = {
             serial, modelo, descripcion, color, foto,
             fechaCompra, precio,
@@ -107,36 +154,36 @@ useEffect(() => {
                 text: 'Cargando...'
             });
             Swal.showLoading();
-            const { data } = await crearInventario(inventario);
-            handleOpenModal();
-            listarInventarios();
+            const { data } = await actualizarInventario(inventarioId, inventario);
             Swal.close();
 
         } catch(error) {
             console.log(error);
             Swal.close();
+            let mensaje;
+            if ( error && error.response && error.response.data) {
+                mensaje = error.response.data
+            } else {
+                mensaje = "Ocurrió un error, por favor intente de nuevo"
+            }
+            Swal.fire('Error', mensaje, 'error');
         }
         
     }
 
+
   return (
-    <div className='sidebar'>
-        <div className='container-fluid'>
+    <div className='container-fluid mt-3 mb-2'>
+      <div className='card'>
+        <div className='card-header'>
+            <h5 className='card-title'>Detalle Activo</h5>
+        </div>  
+        <div className='card-body'>
             <div className='row'>
-
-                <div className='col'>
-                    <div className='sidebar-header'>
-                        <h3>Nuevo Inventario</h3>
-                        <i className="fa-solid fa-xmark" onClick={ handleOpenModal }> </i>
-                    </div>
+                <div className='col-md-4'>
+                    <img src={inventario?.foto} />
                 </div>
-
-                <div className='row'>
-                    <div className='col'>
-                        <hr  />
-                    </div>
-                </div>
-
+                <div className='col-md-8'>
                 <form onSubmit={(e) => handleOnSubmit(e) }>
                     <div className='row'>
 
@@ -295,9 +342,10 @@ useEffect(() => {
                         
                     </div>
                 </form>
-
+                </div>
             </div>
-        </div>
+        </div>    
+      </div>
     </div>
   )
-} 
+}

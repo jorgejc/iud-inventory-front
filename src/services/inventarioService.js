@@ -24,6 +24,15 @@ const actualizarInventario = (inventarioId, data) => {
     });
 }
 
+const getInventarioPorId = (inventarioId) => {
+    return axiosInstance.get(`inventario/${inventarioId}`, {
+
+        header: {
+            'Content-Type': 'application/json'
+        }
+    });
+}
+
 export {
-    getInventarios, crearInventario, actualizarInventario
+    getInventarios, crearInventario, actualizarInventario, getInventarioPorId
 }
