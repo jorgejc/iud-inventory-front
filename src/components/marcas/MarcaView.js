@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getMarcas, crearMarca } from '../../services/marcaService';
+import { getMarcas, crearMarca, actualizarMarca } from '../../services/marcaService';
 import Swal from 'sweetalert2';
 const moment = require('moment');
 
@@ -8,6 +8,8 @@ export const MarcaView = () => {
   const [valoresForm, setValoresForm] = useState({});
   const [marcas, setMarcas] = useState([]);
   const { nombre = '', estado = '' } = valoresForm;
+  const [marcaSeleccionada, setMarcaSeleccionada] = useState(null);
+
 
 
   const listarMarcas = async () => {
@@ -34,6 +36,7 @@ export const MarcaView = () => {
     setValoresForm({ ...valoresForm, [e.target.name]: e.target.value });
   }
 
+
   const handleCrearMarca = async (e) => {
     e.preventDefault();
     try {
@@ -42,17 +45,35 @@ export const MarcaView = () => {
         text: 'Cargando...'
       });
       Swal.showLoading();
-      const resp = await crearMarca(valoresForm);
+  
+      if (marcaSeleccionada) {
+        // Si hay una marca seleccionada, actualiza
+        await actualizarMarca(valoresForm, marcaSeleccionada);
+        setMarcaSeleccionada(null); // Resetear
+      } else {
+        // Si no hay marca seleccionada, crea una nueva
+        await crearMarca(valoresForm);
+      }
+      
       setValoresForm({ nombre: '', estado: '' });
+      listarMarcas();
       Swal.close();
     } catch (error) {
       console.log(error);
       Swal.close();
     }
-  }
+  };
+  
+
+  const handleActualizarMarca = async (e, marca) => {
+    e.preventDefault();
+    setValoresForm({ nombre: marca.nombre, estado: marca.estado });
+    setMarcaSeleccionada(marca._id); 
+  };
+  
 
   return (
-    <div className='container-fluid'>
+    <div className='container-fluid mt-4'>
     <form onSubmit={(e) => handleCrearMarca(e)} >
       <div className="row">
         <div className="col-lg-8">
@@ -73,7 +94,7 @@ export const MarcaView = () => {
           </div>
         </div>
       </div>
-      <button className="btn btn-primary">Guardar</button>
+      <button className="btn btn-primary mb-3">Guardar</button>
     </form>
 
     <table className="table">
@@ -84,6 +105,7 @@ export const MarcaView = () => {
           <th scope="col">Estado</th>
           <th scope='col'>Fecha Creación</th>
           <th scope='col'>Fecha Actualización</th>
+          <th scope='col'>Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -95,6 +117,9 @@ export const MarcaView = () => {
               <td>{marca.estado}</td>
               <td>{moment(marca.fechaCreacion).format('DD-MM-YYYY HH:mm')}</td>
               <td>{moment(marca.FechaActualizacion).format('DD-MM-YYYY HH:mm')}</td>
+              <td><button className='btn btn-success btn-sm me-2' onClick={(e) => handleActualizarMarca(e, marca)}>Actualizar</button>
+                  <button className='btn btn-danger btn-sm'>Eliminar</button>
+                </td>
             </tr>
           })
         }

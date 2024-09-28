@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getUsuarios, crearUsuario } from '../../services/usuarioService';
+import { getUsuarios, crearUsuario, actualizarUsuario } from '../../services/usuarioService';
 import Swal from 'sweetalert2';
 const moment = require('moment');
 
@@ -8,16 +8,18 @@ export const UsuarioView = () => {
 const [valoresForm, setValoresForm] = useState([]);
 const [usuarios, setUsuarios] = useState([]);
 const { nombre = '', email = '', estado = '' } = valoresForm;
+const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
 
 const listarUsuarios = async () => {
   try {
     Swal.fire({
       allowOutsideClick: false,
       text: 'Cargando...'
-  });
-  const resp = await getUsuarios();
-  setUsuarios(resp.data);
-  Swal.close();
+      });
+    Swal.showLoading();
+    const resp = await getUsuarios();
+    setUsuarios(resp.data);
+    Swal.close();
   } catch (error) {
     console.log(error);
     Swal.close();
@@ -32,26 +34,40 @@ const handleOnChange = (e) => {
   setValoresForm({ ...valoresForm, [e.target.name]: e.target.value });
 }
 
+
 const handleCrearUsuario = async (e) => {
   e.preventDefault();
-  console.log(valoresForm);
-    try {
-      Swal.fire({
-        allowOutsideClick: false,
-        text: 'Cargando...'
+  try {
+    Swal.fire({
+      allowOutsideClick: false,
+      text: 'Cargando...'
     });
     Swal.showLoading();
-    const resp = await crearUsuario(valoresForm);
-    Swal.close();
-    } catch (error) {
-      console.log(error);
-      Swal.close();
-    }
 
-}
+    if (usuarioSeleccionado) {
+      await actualizarUsuario(valoresForm, usuarioSeleccionado);
+      setUsuarioSeleccionado(null);
+    } else {
+      await crearUsuario(valoresForm);
+    }
+    
+    setValoresForm({ nombre: '', email: '', estado: '' });
+    listarUsuarios();
+    Swal.close();
+  } catch (error) {
+    console.log(error);
+    Swal.close();
+  }
+};
+
+const handleActualizarUsuario = async (e, usuario) => {
+  e.preventDefault();
+  setValoresForm({ nombre: usuario.nombre, email: usuario.email, estado: usuario.estado });
+  setUsuarioSeleccionado(usuario._id); 
+};
 
   return (
-    <div className='container-fluid'>
+    <div className='container-fluid mt-4'>
       <form onSubmit={(e) => handleCrearUsuario(e)} >
         <div className="row">
           <div className="col-lg-4">
@@ -80,7 +96,7 @@ const handleCrearUsuario = async (e) => {
             </div>
           </div>
         </div>
-        <button className="btn btn-primary">Guardar</button>
+        <button className="btn btn-primary mb-3">Guardar</button>
       </form>
 
       <table className="table">
@@ -92,6 +108,7 @@ const handleCrearUsuario = async (e) => {
             <th scope="col">Estado</th>
             <th scope='col'>Fecha Creación</th>
             <th scope='col'>Fecha Actualización</th>
+            <th scope='col'>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -104,6 +121,10 @@ const handleCrearUsuario = async (e) => {
                 <td>{usuario.estado}</td>
                 <td>{moment(usuario.fechaCreacion).format('DD-MM-YYYY HH:mm')}</td>
                 <td>{moment(usuario.FechaActualizacion).format('DD-MM-YYYY HH:mm')}</td>
+                <td><button className='btn btn-success btn-sm me-2' onClick={(e) => handleActualizarUsuario(e, usuario)}>Actualizar</button>
+                  <button className='btn btn-danger btn-sm'>Eliminar</button>
+                </td>
+                
               </tr>
             })
           }

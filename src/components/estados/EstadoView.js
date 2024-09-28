@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getEstados, crearEstado } from '../../services/estadoService';
+import { getEstados, crearEstado, actualizarEstado } from '../../services/estadoService';
 import Swal from 'sweetalert2';
 const moment = require('moment');
 
@@ -8,6 +8,7 @@ export const EstadoView = () => {
   const [valoresForm, setValoresForm] = useState({});
   const [estados, setEstados] = useState([]);
   const { nombre = '', estado = '' } = valoresForm;
+  const [estadoSeleccionado, setEstadoSeleccionado] = useState(null);
 
   const listarEstados = async () => {
     try {
@@ -43,17 +44,32 @@ const handleCrearEstado = async (e) => {
       text: 'Cargando...'
     });
     Swal.showLoading();
-    const resp = await crearEstado(valoresForm);
+
+    if (estadoSeleccionado) {
+      await actualizarEstado(valoresForm, estadoSeleccionado);
+      setEstadoSeleccionado(null); 
+    } else {
+      await crearEstado(valoresForm);
+    }
+    
     setValoresForm({ nombre: '', estado: '' });
+    listarEstados();
     Swal.close();
   } catch (error) {
     console.log(error);
     Swal.close();
   }
-}
+};
+
+
+const handleActualizarTipo = async (e, estado) => {
+  e.preventDefault();
+  setValoresForm({ nombre: estado.nombre, estado: estado.estado });
+  setEstadoSeleccionado(estado._id); 
+};
 
 return (
-    <div className='container-fluid'>
+    <div className='container-fluid mt-4'>
     <form onSubmit={(e) => handleCrearEstado(e)} >
       <div className="row">
         <div className="col-lg-8">
@@ -74,9 +90,7 @@ return (
           </div>
         </div>
       </div>
-      <button className="btn btn-primary">Guardar</button>
-      <br />
-      <br />
+      <button className="btn btn-primary mb-3">Guardar</button>
     </form>
 
     <table className="table">
@@ -87,6 +101,7 @@ return (
           <th scope="col">Estado</th>
           <th scope='col'>Fecha Creación</th>
           <th scope='col'>Fecha Actualización</th>
+          <th scope='col'>Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -98,6 +113,9 @@ return (
               <td>{estado.estado}</td>
               <td>{moment(estado.fechaCreacion).format('DD-MM-YYYY HH:mm')}</td>
               <td>{moment(estado.FechaActualizacion).format('DD-MM-YYYY HH:mm')}</td>
+              <td><button className='btn btn-success btn-sm me-2' onClick={(e) => handleActualizarTipo(e, estado)}>Actualizar</button>
+                  <button className='btn btn-danger btn-sm'>Eliminar</button>
+              </td>
             </tr>
           })
         }
